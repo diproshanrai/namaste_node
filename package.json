@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "asv",
   "version": "1.0.0",
   "description": "learn node",
@@ -22,3 +23,7 @@
     "sequelize": "^6.37.3"
   }
 }
+=======
+    "type": "module"
+}
+>>>>>>> a9af7e9ddf84e1d41587ab51dce0737c2baa6287
