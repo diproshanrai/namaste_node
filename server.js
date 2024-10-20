@@ -15,6 +15,16 @@ app.post("/sign", async (req, res) => {
   }
 });
 
+app.patch("/update", async (req, res) => {
+  try {
+    const userid = req.body.id;
+    const upd = await User.findByIdAndUpdate(userid);
+    res.status(200).send("User has been updated")
+  } catch (err) {
+    res.status(400).send("Error mesage" + err.message);
+  }
+});
+
 app.get("/find", async (req, res) => {
   try {
     const name = req.body.firstName;
