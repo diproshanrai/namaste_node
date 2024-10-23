@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const validator = require("validator");
 
 const userSchema = new mongoose.Schema(
   {
@@ -11,17 +12,31 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       unique: true,
+      required: [true, "Email id cannot be empty"],
+      validate(value) {
+        if (!validator.isEmail(value)) {
+          throw new Error("Invalid Email: " + value);
+        }
+      },
+    },
+    password: {
+      type: String
     },
     gender: {
       type: String,
       validate(value) {
         if (!["male", "female", "other"].includes(value)) {
-          res.status(400).send("Gender given is invalid");
+          throw new Error("Gender given is invalid: " + value);
         }
       },
     },
     number: {
-      type: Number,
+      type: String,
+      validate(value) {
+        if (!validator.isMobilePhone(value, "en-IN")) {
+          throw new Error("Invalid mobile number: " + value);
+        }
+      },
     },
     age: {
       type: Number,

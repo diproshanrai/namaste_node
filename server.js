@@ -2,24 +2,45 @@ const express = require("express");
 const app = express();
 const connection = require("./src/config/db");
 const User = require("./src/models/User.js");
+const { validateSign } = require("./src/utils/validation.js");
 
 app.use(express.json());
 
 app.post("/sign", async (req, res) => {
   const user = new User(req.body);
   try {
+    validateSign(req);
     await user.save();
     res.send("User Added Success");
   } catch (err) {
     console.error("Error: ", err);
+    res.status(500).send("Something went wrong: " + err.message);
   }
 });
 
 app.patch("/update", async (req, res) => {
   try {
     const userid = req.body.id;
-    const upd = await User.findByIdAndUpdate(userid);
-    res.status(200).send("User has been updated")
+    const data = req.body;
+
+    const allowedUpdates = ["gender", "number", "age", "skills"];
+
+    const isUpdated = Object.keys(data).every((k) =>
+      allowedUpdates.includes(k)
+    );
+
+    if (!isUpdated) {
+      throw new Error("Update is not allowed");
+    }
+
+    if (data.skills.length > 10) {
+      throw new Error("Skills can't be more than 10");
+    }
+    const upd = await User.findByIdAndUpdate({ _id: userid }, data, {
+      returnDocument: "after",
+      runValidators: true,
+    });
+    res.status(200).send("User has been updated");
   } catch (err) {
     res.status(400).send("Error mesage" + err.message);
   }
