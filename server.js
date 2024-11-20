@@ -4,8 +4,11 @@ const connection = require("./src/config/db");
 const User = require("./src/models/User.js");
 const { validateSign } = require("./src/utils/validation.js");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+const userAuth = require("./src/middleware/userAuth.js");
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/sign", async (req, res) => {
   try {
@@ -46,9 +49,14 @@ app.post("/login", async (req, res) => {
       throw new Error("Email not found");
     }
 
-    const signin = await bcrypt.compare(password, user.password);
-    console.log(signin);
-    if (!signin) {
+    const signin = await user.validatePassword(password);
+
+    if (signin) {
+      const token = await user.getJWT();
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 60 * 60 * 1000),
+      });
+    } else {
       throw new Error("Password not match");
     }
     res.status(200).send("Login succesfull");
@@ -57,13 +65,32 @@ app.post("/login", async (req, res) => {
   }
 });
 
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send("Your profile is here : " + user);
+  } catch (err) {
+    res.status(500).send("Error: " + err.message);
+  }
+});
+
+app.post("/sentConnectionRequest", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.status(200).send(user.name + " your connection is sent");
+  } catch (err) {
+    res.status(400).send("Error: " + err.message);
+  }
+});
+
 app.patch("/update", async (req, res) => {
   try {
     const userid = req.body.id;
-    const data = req.body;
+    const { id, ...data } = req.body; // Destructure to exclude 'id' from validation
 
-    const allowedUpdates = ["gender", "number", "age", "skills"];
+    const allowedUpdates = ["name", "number", "age", "skills"];
 
+    // Validate update keys
     const isUpdated = Object.keys(data).every((k) =>
       allowedUpdates.includes(k)
     );
@@ -72,16 +99,24 @@ app.patch("/update", async (req, res) => {
       throw new Error("Update is not allowed");
     }
 
-    if (data.skills.length > 10) {
+    // Validate skills array length
+    if (data.skills && data.skills.length > 10) {
       throw new Error("Skills can't be more than 10");
     }
+
+    // Perform the update
     const upd = await User.findByIdAndUpdate({ _id: userid }, data, {
       returnDocument: "after",
       runValidators: true,
     });
+
+    if (!upd) {
+      throw new Error("User not found or update failed");
+    }
+
     res.status(200).send("User has been updated");
   } catch (err) {
-    res.status(400).send("Error mesage" + err.message);
+    res.status(400).send("Error message: " + err.message);
   }
 });
 
