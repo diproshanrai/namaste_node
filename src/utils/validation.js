@@ -14,6 +14,30 @@ const validateSign = (req) => {
   }
 };
 
+const validateEdit = (req) => {
+  const allowedKeys = ["name", "age", "number", "skills"];
+  const { name, age, number, skills } = req.body;
+  if (!name) {
+    throw new Error("Name is not valid. Name cannot be empty");
+  }
+  if (!age && age > 18) {
+    throw new Error("Age is not valid. Name cannot be empty");
+  }
+  if (!number) {
+    throw new Error("Number is not valid. Name cannot be empty");
+  }
+  if (!skills) {
+    throw new Error("Skills is not valid. Name cannot be empty");
+  }
+
+  const isAllowedEdit = Object.keys(req.body).every((fields) =>
+    allowedKeys.includes(fields)
+  );
+
+  return isAllowedEdit;
+};
+
 module.exports = {
   validateSign,
+  validateEdit,
 };
